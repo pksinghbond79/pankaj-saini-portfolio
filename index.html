@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pankaj Saini - DevOps & Cloud Engineer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Google Analytics Tracking Code -->
+    <!-- Replace 'YOUR_GA_MEASUREMENT_ID' with your actual Google Analytics Measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'YOUR_GA_MEASUREMENT_ID');
+    </script>
+    <!-- End Google Analytics Tracking Code -->
+
+    <!-- Chosen Palette: Slate Gray & Sky Blue -->
+    <!-- Application Structure Plan: The application is designed as a single-page, multi-section dashboard. This structure allows users to quickly navigate between key areas of the portfolio (About, Skills, Experience, Projects, Certifications, AI Tool, Contact) without reloading the page. The top navigation bar is fixed for constant access. This non-linear, interactive approach is more engaging and user-friendly than a traditional, static resume format, allowing potential employers to quickly find the information they need and explore the sections that are most relevant to them. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Skills list. Goal: Inform/Compare. Viz/Presentation: Interactive Radar Chart. Interaction: Hover to see skill names and proficiency levels. Justification: A radar chart provides a quick, holistic view of multifaceted skills and their relative strengths, which is more impactful than a simple list. Library/Method: Chart.js/Canvas.
+        - Report Info: Work Experience & Education. Goal: Show Progression. Viz/Presentation: Vertical timeline. Interaction: Chronological flow. Justification: A timeline is the most intuitive way to present chronological data, showing career progression and academic milestones clearly. Library/Method: HTML/Tailwind.
+        - Report Info: Certifications. Goal: Organize/Verify. Viz/Presentation: Grid-based card gallery. Interaction: Clicking a card opens the certificate link for verification. Justification: A visual gallery is more engaging than a text list and provides direct proof of credentials. Library/Method: HTML/Tailwind.
+        - Report Info: Job Description input. Goal: Generate tailored text. Viz/Presentation: Textarea and button. Interaction: User inputs job description, clicks a button, and the LLM generates a relevant cover letter snippet. Justification: This showcases practical AI integration and provides a valuable, interactive tool for recruiters. Library/Method: Gemini API via JavaScript fetch.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+        }
+        .certificate-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .certificate-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .message-box.show {
+            opacity: 1;
+        }
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold">Pankaj Saini</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#about" class="nav-link border-b-2 border-transparent pb-1">About</a>
+                <a href="#skills" class="nav-link border-b-2 border-transparent pb-1">Skills</a>
+                <a href="#experience" class="nav-link border-b-2 border-transparent pb-1">Experience</a>
+                <a href="#projects" class="nav-link border-b-2 border-transparent pb-1">Projects</a>
+                <a href="#certifications" class="nav-link border-b-2 border-transparent pb-1">Certifications</a>
+                <a href="#llm-feature" class="nav-link border-b-2 border-transparent pb-1">AI Tool</a>
+                <a href="#contact" class="nav-link border-b-2 border-transparent pb-1">Contact</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-800">
+            <a href="#about" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">About</a>
+            <a href="#skills" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">Skills</a>
+            <a href="#experience" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">Experience</a>
+            <a href="#projects" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">Projects</a>
+            <a href="#certifications" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">Certifications</a>
+            <a href="#llm-feature" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">AI Tool</a>
+            <a href="#contact" class="block text-center py-2 px-4 text-sm hover:bg-slate-700">Contact</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="about" class="py-20 md:py-32">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-4">Pankaj Saini</h1>
+                <p class="text-xl md:text-2xl text-sky-600 font-semibold mb-8">DevOps Engineer | Cloud Engineer | Linux Engineer</p>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600 mb-10">
+                    Hi, I'm Pankaj Saini, a passionate DevOps and Cloud Engineer with robust expertise in AWS, GCP, Azure, Docker, Kubernetes, and Linux. I thrive on learning new technologies and solving complex challenges in cloud-native environments. My goal is to leverage automation and best practices to build scalable, resilient, and efficient systems.
+                </p>
+                <a href="https://drive.google.com/file/d/1ct1M7IEk329CSUnUaeIGBeMBIpmdyl_M/view?usp=sharing" target="_blank" class="bg-sky-500 text-white font-bold py-3 px-8 rounded-full hover:bg-sky-600 transition duration-300 text-lg shadow-lg">
+                    <i class="fas fa-download mr-2"></i> Download Resume
+                </a>
+            </div>
+        </section>
+
+        <section id="skills" class="bg-white py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">My Technical Skills</h2>
+                    <p class="text-lg text-slate-500 mt-4 max-w-3xl mx-auto">This chart provides a visual overview of my core competencies. I have hands-on experience across cloud platforms, containerization, automation, and scripting, enabling me to manage the full software development lifecycle. Hover over the points to see my proficiency in each area.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="skillsChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="experience" class="py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Work Experience & Education</h2>
+                    <p class="text-lg text-slate-500 mt-4 max-w-3xl mx-auto">My professional journey and academic background have provided me with a solid foundation in technology and engineering principles. This timeline highlights my key roles and educational milestones that have shaped my career.</p>
+                </div>
+                <div class="relative max-w-4xl mx-auto">
+                    <div class="absolute w-1 bg-sky-200 h-full left-1/2 transform -translate-x-1/2"></div>
+                    
+                    <div class="relative mt-8">
+                        <div class="mb-8 flex justify-between items-center w-full right-timeline">
+                            <div class="order-1 w-5/12"></div>
+                            <div class="z-20 flex items-center order-1 bg-sky-500 shadow-xl w-12 h-12 rounded-full">
+                                <i class="fas fa-briefcase mx-auto text-white text-xl"></i>
+                            </div>
+                            <div class="order-1 bg-white rounded-lg shadow-xl w-5/12 px-6 py-4">
+                                <h3 class="font-bold text-slate-800 text-xl">Technical Gufigu Pvt Ltd</h3>
+                                <p class="text-sm font-semibold text-sky-600">Tech Intern (Virtual Training)</p>
+                                <p class="text-sm text-slate-500">Oct 2022 - Sep 2023</p>
+                                <p class="text-md leading-snug tracking-wide text-slate-600 text-opacity-100 mt-2">
+                                    Gained hands-on experience with CI/CD pipelines, containerization using Docker & Kubernetes, and cloud services on AWS and Azure.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mb-8 flex justify-between flex-row-reverse items-center w-full left-timeline">
+                            <div class="order-1 w-5/12"></div>
+                            <div class="z-20 flex items-center order-1 bg-sky-500 shadow-xl w-12 h-12 rounded-full">
+                                <i class="fas fa-graduation-cap mx-auto text-white text-xl"></i>
+                            </div>
+                            <div class="order-1 bg-white rounded-lg shadow-xl w-5/12 px-6 py-4">
+                                <h3 class="font-bold text-slate-800 text-xl">Teerthanker Mahaveer University</h3>
+                                <p class="text-sm font-semibold text-sky-600">B.Tech, Computer Science</p>
+                                <p class="text-sm text-slate-500">2022 - 2024</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-8 flex justify-between items-center w-full right-timeline">
+                            <div class="order-1 w-5/12"></div>
+                            <div class="z-20 flex items-center order-1 bg-sky-500 shadow-xl w-12 h-12 rounded-full">
+                                <i class="fas fa-school mx-auto text-white text-xl"></i>
+                            </div>
+                            <div class="order-1 bg-white rounded-lg shadow-xl w-5/12 px-6 py-4">
+                                <h3 class="font-bold text-slate-800 text-xl">H.S.P. Inter College</h3>
+                                <p class="text-sm font-semibold text-sky-600">12th Standard</p>
+                                <p class="text-sm text-slate-500">2018</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-8 flex justify-between flex-row-reverse items-center w-full left-timeline">
+                            <div class="order-1 w-5/12"></div>
+                            <div class="z-20 flex items-center order-1 bg-sky-500 shadow-xl w-12 h-12 rounded-full">
+                                <i class="fas fa-school mx-auto text-white text-xl"></i>
+                            </div>
+                            <div class="order-1 bg-white rounded-lg shadow-xl w-5/12 px-6 py-4">
+                                <h3 class="font-bold text-slate-800 text-xl">Blue Birds International School</h3>
+                                <p class="text-sm font-semibold text-sky-600">10th Standard</p>
+                                <p class="text-sm text-slate-500">2016</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="bg-white py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Key Projects</h2>
+                    <p class="text-lg text-slate-500 mt-4 max-w-3xl mx-auto">These projects demonstrate my ability to apply DevOps principles to real-world scenarios, from automating infrastructure to building and deploying applications across different cloud environments.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-slate-50 p-8 rounded-lg shadow-md">
+                        <div class="text-sky-500 mb-4"><i class="fas fa-cogs text-4xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2">Automated CI/CD Pipeline</h3>
+                        <p class="text-slate-600">Designed and implemented a full CI/CD pipeline using Jenkins, Docker, and Kubernetes to automate application builds, testing, and deployment, significantly reducing manual effort.</p>
+                    </div>
+                    <div class="bg-slate-50 p-8 rounded-lg shadow-md">
+                        <div class="text-sky-500 mb-4"><i class="fas fa-cloud-upload-alt text-4xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2">Cloud Infrastructure Automation</h3>
+                        <p class="text-slate-600">Utilized Terraform to define and provision infrastructure as code (IaC) on AWS, ensuring consistent, repeatable, and scalable environments for development and production.</p>
+                    </div>
+                    <div class="bg-slate-50 p-8 rounded-lg shadow-md">
+                        <div class="text-sky-500 mb-4"><i class="fas fa-server text-4xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2">Multi-Cloud Deployment</h3>
+                        <p class="text-slate-600">Architected and executed a deployment strategy for a web application across both AWS and Azure, focusing on high availability and fault tolerance in a multi-cloud setup.</p>
+                    </div>
+                    <!-- Updated Project Description -->
+                    <div class="bg-slate-50 p-8 rounded-lg shadow-md">
+                        <div class="text-sky-500 mb-4"><i class="fas fa-car-crash text-4xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2">Real-time Pothole Mapping for Enhanced Driver Safety</h3>
+                        <p class="text-slate-600">Currently developing an innovative system designed to address life-threatening scenarios caused by poor visibility during adverse weather, such as heavy rainfall. My vision is to create a device that accurately maps potholes hidden beneath dirty water and displays them on a screen in real-time, significantly enhancing safety for all vehicle types including cars, motorcycles, and scooters.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="certifications" class="py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                 <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Certifications & Training</h2>
+                    <p class="text-lg text-slate-500 mt-4 max-w-3xl mx-auto">My commitment to continuous learning is demonstrated by my industry-recognized certifications. These credentials validate my skills across multiple cloud platforms and core technologies. Click on any certificate to view the official document.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <a href="https://www.credly.com/badges/1ab0a1a6-6243-4446-b956-c191d8cee2db/public_url" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-google text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">Google Cloud Associate Engineer</h3>
+                    </a>
+                     <a href="https://drive.google.com/file/d/1YV1VNjN6d1GmAb3YCgDHK1ivWCmoa4Ea/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-microsoft text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">Azure Administrator (AZ-104) Training</h3>
+                    </a>
+                    <a href="https://drive.google.com/file/d/10nm-6j9en0zrrcPcZUYKsJAnWk2Z_rFX/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-aws text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">AWS Solution Architect Associate</h3>
+                    </a>
+                    <a href="https://www.credly.com/badges/4631b4ae-e578-406d-a7fb-5f8de6fda793/public_url" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fas fa-database text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">IBM Cloud Practitioner</h3>
+                    </a>
+                    <a href="https://drive.google.com/file/d/1ZJ2Ey5fj9ypn-XWvGxNqJPei12YDdqxS/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fas fa-network-wired text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">Cisco Certified Network Associate (CCNA) Training</h3>
+                    </a>
+                    <a href="https://www.credly.com/badges/b0f9eff9-231d-443e-bbe8-c9c2f1b20f28" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-github text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">GitHub Foundations</h3>
+                    </a>
+                     <a href="https://drive.google.com/file/d/1-rmnyK_CpwbVn5-qc8cfdlewp2FNIkEh/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-git-alt text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">Git & GitHub Masterclass</h3>
+                    </a>
+                    <a href="https://drive.google.com/file/d/1KXo5wj2vxTMazg9JlrM-AhXmMk28t/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-docker text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">Docker and Kubernetes Certified</h3>
+                    </a>
+                     <a href="https://drive.google.com/file/d/16ZGduWczzSMRCkEg9c0s1VBeqWptwnIQ/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-redhat text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">RedHat Ansible Automation Certificate</h3>
+                    </a>
+                    <a href="https://drive.google.com/file/d/1BFedZxXmzzF7klrO6wNcM98N9nbG3xjd/view?usp=sharing" target="_blank" class="certificate-card block bg-white p-6 rounded-lg shadow-md text-center">
+                        <div class="h-32 flex items-center justify-center">
+                           <i class="fab fa-python text-5xl text-sky-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-4">Python Training Certificate</h3>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="llm-feature" class="py-20 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">✨ AI Assistant: Cover Letter Snippets & Profile Q&A</h2>
+                    <p class="text-lg text-slate-500 mt-4 max-w-3xl mx-auto">Paste a **job description** below to generate a concise cover letter snippet tailored to Pankaj's profile. You can also ask questions about Pankaj's skills, experience, projects, hobbies, contact info, or date of birth. Press **Enter** to submit!</p>
+                </div>
+                <div class="max-w-3xl mx-auto bg-slate-50 p-8 rounded-lg shadow-md">
+                    <textarea id="jobDescriptionInput" class="w-full p-4 rounded-md border border-slate-300 focus:ring-sky-500 focus:border-sky-500 text-slate-700 h-40 mb-6" placeholder="Example: 'Seeking a DevOps Engineer with expertise in AWS, Kubernetes, and CI/CD pipelines...' or 'What are Pankaj's hobbies?'"></textarea>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <button id="generateSnippetButton" class="w-full sm:w-1/2 bg-sky-500 text-white font-bold py-3 px-8 rounded-md hover:bg-sky-600 transition duration-300 text-lg shadow-lg flex items-center justify-center disabled:bg-sky-300">
+                            <span id="buttonText">Process Request</span>
+                            <i id="loadingSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                        </button>
+                        <button id="clearButton" class="w-full sm:w-1/2 bg-slate-600 text-white font-bold py-3 px-8 rounded-md hover:bg-slate-700 transition duration-300 text-lg shadow-lg flex items-center justify-center">
+                            <i class="fas fa-times-circle mr-2"></i> Clear
+                        </button>
+                    </div>
+                    <div id="snippetOutput" class="mt-8 p-6 bg-white rounded-md border border-slate-200 text-slate-700 min-h-[100px] flex items-center justify-center text-center">
+                        Your tailored response will appear here.
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                        <button id="copyButton" class="w-full sm:w-1/2 bg-slate-700 text-white font-bold py-2 px-6 rounded-md hover:bg-slate-800 transition duration-300 text-md shadow-lg flex items-center justify-center hidden">
+                            <i class="fas fa-copy mr-2"></i> Copy to Clipboard
+                        </button>
+                        <!-- Speak button is now primarily for manual re-trigger if needed, as speech is automatic -->
+                        <button id="speakButton" class="w-full sm:w-1/2 bg-indigo-500 text-white font-bold py-2 px-6 rounded-md hover:bg-indigo-600 transition duration-300 text-md shadow-lg flex items-center justify-center hidden">
+                            <i class="fas fa-volume-up mr-2"></i> Speak Response
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-20 md:py-24">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Get In Touch</h2>
+                <p class="text-lg text-slate-500 mt-4 mb-8 max-w-3xl mx-auto">I'm always open to discussing new projects, creative ideas, or opportunities to be part of an amazing team. <br>Feel free to reach out to me through any of the platforms below.</p>
+                <div class="flex justify-center space-x-6 text-4xl text-slate-600">
+                    <a href="https://www.linkedin.com/in/pankajpkbond" target="_blank" class="hover:text-sky-500 transition duration-300"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://github.com/pksinghbond79" target="_blank" class="hover:text-sky-500 transition duration-300"><i class="fab fa-github"></i></a>
+                    <a href="https://medium.com/@pksinghbond798352" target="_blank" class="hover:text-sky-500 transition duration-300"><i class="fab fa-medium"></i></a>
+                    <a href="https://wa.me/917060332724" target="_blank" class="hover:text-sky-500 transition duration-300"><i class="fab fa-whatsapp"></i></a>
+                    <a href="mailto:pankajsaini798352@gmail.com" class="hover:text-sky-500 transition duration-300"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- New "Hire Me" Button Section -->
+        <section id="hire-me" class="py-10 text-center bg-sky-100">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-slate-900 mb-6">Interested in Hiring Pankaj?</h2>
+                <p class="text-lg text-slate-700 mb-8">Fill out the form below to connect directly with Pankaj for potential opportunities.</p>
+                <button id="openHireMeModal" class="inline-flex items-center bg-sky-600 text-white font-bold py-4 px-10 rounded-full hover:bg-sky-700 transition duration-300 text-xl shadow-lg">
+                    <i class="fas fa-handshake mr-3"></i> Hire Me!
+                </button>
+            </div>
+        </section>
+
+        <!-- Always visible Call Button at the bottom -->
+        <div class="py-10 text-center bg-slate-50">
+            <a href="tel:+917983520199" class="inline-flex items-center bg-green-500 text-white font-bold py-3 px-8 rounded-md hover:bg-green-600 transition duration-300 text-lg shadow-lg">
+                <i class="fas fa-phone-alt mr-2"></i> Call Pankaj Directly
+            </a>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-white py-6">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2024 Pankaj Saini. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Hire Me Modal -->
+    <div id="hireMeModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="closeHireMeModal" class="modal-close-button">&times;</button>
+            <h3 class="text-2xl font-bold text-slate-900 mb-6 text-center">Tell Us About the Opportunity</h3>
+            <form id="hireMeForm" action="https://formspree.io/f/xvgrelae" method="POST" class="space-y-4">
+                <div>
+                    <label for="hrName" class="block text-slate-700 text-sm font-bold mb-2">Your Name:</label>
+                    <input type="text" id="hrName" name="HR Name" required class="shadow appearance-none border rounded w-full py-3 px-4 text-slate-700 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label for="hrEmail" class="block text-slate-700 text-sm font-bold mb-2">Your Email:</label>
+                    <input type="email" id="hrEmail" name="HR Email" required class="shadow appearance-none border rounded w-full py-3 px-4 text-slate-700 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label for="companyName" class="block text-slate-700 text-sm font-bold mb-2">Company Name:</label>
+                    <input type="text" id="companyName" name="Company Name" required class="shadow appearance-none border rounded w-full py-3 px-4 text-slate-700 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label for="positionHiring" class="block text-slate-700 text-sm font-bold mb-2">Position You're Hiring For:</label>
+                    <input type="text" id="positionHiring" name="Position Hiring For" required class="shadow appearance-none border rounded w-full py-3 px-4 text-slate-700 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label for="whyHire" class="block text-slate-700 text-sm font-bold mb-2">Why do you think Pankaj is a good fit for this role? (Optional)</label>
+                    <textarea id="whyHire" name="Why Hire Pankaj" rows="5" class="shadow appearance-none border rounded w-full py-3 px-4 text-slate-700 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                </div>
+                <div class="flex justify-center">
+                    <button type="submit" class="bg-sky-500 text-white font-bold py-3 px-8 rounded-md hover:bg-sky-600 transition duration-300 text-lg shadow-lg">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit Inquiry
+                    </button>
+                </div>
+            </form>
+            <p id="formMessage" class="text-center mt-4 text-sm text-green-600 hidden">Thank you for your inquiry! Pankaj will get back to you soon.</p>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box hidden"></div>
+
+    <script>
+        function showMessage(message, type = 'success') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = 'message-box show'; // Reset classes and add show
+            if (type === 'error') {
+                messageBox.style.backgroundColor = '#f44336'; // Red for error
+            } else {
+                messageBox.style.backgroundColor = '#4CAF50'; // Green for success
+            }
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000); // Hide after 3 seconds
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+            new Chart(skillsCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'Jenkins', 'Python', 'Linux'],
+                    datasets: [{
+                        label: 'Proficiency',
+                        data: [85, 80, 75, 90, 88, 82, 85, 78, 92],
+                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        borderColor: 'rgba(56, 189, 248, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(56, 189, 248, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(56, 189, 248, 1)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: { font: { size: 14, weight: 'bold' }, color: '#334155' },
+                            ticks: { backdropColor: 'transparent', stepSize: 20 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('header a[href^="#"]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (this.getAttribute('href') !== '#') {
+                        e.preventDefault();
+                        let targetId = this.getAttribute('href');
+                        let targetElement = document.querySelector(targetId);
+                        if(targetElement){
+                             window.scrollTo({
+                                top: targetElement.offsetTop - 80, 
+                                behavior: 'smooth'
+                            });
+                        }
+                        if(!mobileMenu.classList.contains('hidden')){
+                            mobileMenu.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+
+            const sections = document.querySelectorAll('section');
+            const mainNavLinks = document.querySelectorAll('header .hidden a');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 90) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                mainNavLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            const jobDescriptionInput = document.getElementById('jobDescriptionInput');
+            const generateSnippetButton = document.getElementById('generateSnippetButton');
+            const snippetOutput = document.getElementById('snippetOutput');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const buttonText = document.getElementById('buttonText');
+            const copyButton = document.getElementById('copyButton');
+            const clearButton = document.getElementById('clearButton');
+            const speakButton = document.getElementById('speakButton'); 
+
+            // Comprehensive profile information for the AI to reference
+            const pankajProfile = `
+                Hello! My name is Pankaj Saini, and I’m from Mandi Dhanaura in Amroha, Uttar Pradesh. I recently graduated with a Bachelor of Technology in Computer Science from Teerthanker Mahaveer University, where I collaborated with IBM on cutting-edge projects. My passion lies in DevOps and cloud engineering—I’m both a dedicated learner and hands-on practitioner of automation tools, cloud platforms, and CI/CD pipelines. Outside tech, I enjoy playing volleyball, diving into video games, and reading novels to unwind. I’m excited to contribute my skills to innovative projects and grow in a dynamic team!
+
+                Date of Birth: 04/06/2000
+
+                Strengths:
+                - Technical Versatility: Certified in Google Cloud, AWS, Azure, and Red Hat Linux (RHCSA/RHCE), with hands-on experience in multi-cloud deployments. Proficient in key DevOps tools: Kubernetes, Docker, Terraform, Jenkins, and Ansible.
+                - Proactive Learner: Pursued 8+ certifications (e.g., GitHub, Docker, Python) alongside studies to stay industry-ready. Built automated CI/CD pipelines and cloud infrastructure solo during internships.
+                - Problem-Solving Mindset: Successfully deployed fault-tolerant web apps across AWS/Azure and optimized infrastructure via IaC (Terraform).
+
+                Weaknesses (framed as growth opportunities):
+                - Limited Large-Scale Production Exposure: While I’ve managed projects and internships, I’m eager to deepen my experience in enterprise-grade environments. I’m actively upskilling through cloud labs and open-source contributions to bridge this gap.
+                - Balancing Detail-Oriented Focus: I sometimes prioritize precision in tasks like scripting or IaC, which can slow initial delivery. To improve, I’ve adopted Agile techniques to streamline workflows without compromising quality.
+                - New to AI/ML Integration: I have foundational AI/ML knowledge but haven’t deployed it in DevOps contexts yet. I’m currently taking online courses to leverage AIops tools like Prometheus for predictive analytics.
+
+                Hobbies: Playing volleyball, diving into video games, and reading novels.
+
+                Contact Information:
+                - Phone Number: +917060332724
+                - WhatsApp Number: +917060332724
+                - Email: pankajsaini798352@gmail.com
+
+                Key Projects:
+                - Automated CI/CD Pipeline: Designed and implemented a full CI/CD pipeline using Jenkins, Docker, and Kubernetes to automate application builds, testing, and deployment, significantly reducing manual effort.
+                - Cloud Infrastructure Automation: Utilized Terraform to define and provision infrastructure as code (IaC) on AWS, ensuring consistent, repeatable, and scalable environments for development and production.
+                - Multi-Cloud Deployment: Architected and executed a deployment strategy for a web application across both AWS and Azure, focusing on high availability and fault tolerance in a multi-cloud setup.
+                - Real-time Pothole Mapping for Enhanced Driver Safety: Currently developing an innovative system designed to address life-threatening scenarios caused by poor visibility during adverse weather, such as heavy rainfall. My vision is to create a device that accurately maps potholes hidden beneath dirty water and displays them on a screen in real-time, significantly enhancing safety for all vehicle types including cars, motorcycles, and scooters.
+
+                Key Tips for Interviews: Highlight Projects (CI/CD pipeline, multi-cloud deployment, Real-time Pothole Mapping), Certifications (Google Cloud/AWS), Hobbies (volleyball/novels to demonstrate teamwork and curiosity), and always pair weaknesses with active improvement steps.
+            `;
+
+            // Function to handle API call with retry logic
+            async function retryFetch(url, options, retries = 3, delay = 1000) {
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (response.status === 503 && i < retries - 1) {
+                            // Model overloaded, retry after delay
+                            console.warn(`Model overloaded (503). Retrying in ${delay / 1000} seconds... (Attempt ${i + 1}/${retries})`);
+                            snippetOutput.textContent = `Model overloaded. Retrying... (Attempt ${i + 1}/${retries})`;
+                            await new Promise(res => setTimeout(res, delay));
+                            delay *= 2; // Exponential backoff
+                            continue;
+                        }
+                        return response;
+                    } catch (error) {
+                        if (i < retries - 1) {
+                            console.error(`Fetch failed (Attempt ${i + 1}/${retries}):`, error);
+                            snippetOutput.textContent = `Network error. Retrying... (Attempt ${i + 1}/${retries})`;
+                            await new Promise(res => setTimeout(res, delay));
+                            delay *= 2; // Exponential backoff
+                            continue;
+                        }
+                        throw error; // Re-throw if all retries failed
+                    }
+                }
+                throw new Error("All retry attempts failed.");
+            }
+
+            // Function to speak text
+            function speakText(text) {
+                if ('speechSynthesis' in window) {
+                    if (speechSynthesis.speaking) {
+                        speechSynthesis.cancel(); // Stop current speech if any
+                    }
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-IN'; // Set language to Indian English
+                    utterance.rate = 0.95; // Slightly slower than default for clarity
+                    utterance.pitch = 1.05; // Slightly higher pitch for natural tone
+                    speechSynthesis.speak(utterance);
+                } else {
+                    showMessage('Speech synthesis not supported in this browser.', 'error');
+                }
+            }
+
+            // Event listener for Enter key press in the textarea
+            jobDescriptionInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent new line
+                    generateSnippetButton.click(); // Trigger the button click
+                }
+            });
+
+
+            generateSnippetButton.addEventListener('click', async () => {
+                const userInput = jobDescriptionInput.value.trim(); // Keep original casing for prompt, convert to lowercase for keyword matching
+                const lowerCaseUserInput = userInput.toLowerCase();
+                if (!userInput) {
+                    snippetOutput.textContent = "Please paste a job description or ask a question.";
+                    copyButton.classList.add('hidden');
+                    speakButton.classList.add('hidden');
+                    if (speechSynthesis.speaking) speechSynthesis.cancel();
+                    return;
+                }
+
+                loadingSpinner.classList.remove('hidden');
+                buttonText.textContent = "Processing...";
+                generateSnippetButton.disabled = true;
+                clearButton.disabled = true;
+                copyButton.classList.add('hidden');
+                speakButton.classList.add('hidden');
+                snippetOutput.textContent = "Processing your request...";
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel(); // Stop any ongoing speech
+                }
+
+                // Check for contact information queries first
+                const contactKeywords = ["contact number", "whatsapp number", "email", "contact info", "phone number", "reach out", "contact pankaj"];
+                const isContactQuery = contactKeywords.some(keyword => lowerCaseUserInput.includes(keyword));
+
+                // Check for date of birth/age queries
+                const dobKeywords = ["date of birth", "dob", "age", "how old"];
+                const isDobQuery = dobKeywords.some(keyword => lowerCaseUserInput.includes(keyword));
+
+                if (isContactQuery) {
+                    const contactResponse = `Pankaj's contact number is +917060332724, his WhatsApp number is +917060332724, and his email is pankajsaini798352@gmail.com.`;
+                    snippetOutput.textContent = contactResponse;
+                    copyButton.classList.remove('hidden');
+                    speakButton.classList.remove('hidden');
+                    speakText(contactResponse); // Speak automatically
+                    loadingSpinner.classList.add('hidden');
+                    buttonText.textContent = "Process Request";
+                    generateSnippetButton.disabled = false;
+                    clearButton.disabled = false;
+                    return; // Exit function after handling contact query
+                } else if (isDobQuery) {
+                    const dobResponse = `Pankaj's date of birth is 04/06/2000.`;
+                    snippetOutput.textContent = dobResponse;
+                    copyButton.classList.add('hidden'); // No need to copy for simple DOB
+                    speakButton.classList.remove('hidden');
+                    speakText(dobResponse); // Speak automatically
+                    loadingSpinner.classList.add('hidden');
+                    buttonText.textContent = "Process Request";
+                    generateSnippetButton.disabled = false;
+                    clearButton.disabled = false;
+                    return; // Exit function after handling DOB query
+                }
+
+
+                let prompt = `You are an AI assistant representing Pankaj Saini, a DevOps Engineer. Your goal is to accurately answer questions about Pankaj's profile or generate concise cover letter snippets based on provided job descriptions.
+
+                Here is Pankaj's comprehensive profile information:
+                ${pankajProfile}
+
+                ---
+
+                If the user provides input that strongly resembles a job description (e.g., contains "responsibilities", "requirements", "role", "looking for", or is a paragraph describing a job), generate a concise (max 150 words) cover letter snippet that highlights how Pankaj's skills align with the role, drawing from the provided profile. Focus on relevant keywords and Pankaj's strengths.
+                If the user asks a question about Pankaj's profile (e.g., "Tell me about Pankaj's experience", "What projects has he worked on?", "What are Pankaj's skills?", "What are Pankaj's hobbies?", "What are Pankaj's strengths?", "What are Pankaj's weaknesses?", "Pankaj's introduction", "basic info about Pankaj", "date of birth", "age"), provide a direct and accurate answer based *only* on the provided profile information. Do not invent information. If the question is about "Pankaj's introduction" or "basic info about Pankaj", provide the introductory paragraph from the profile.
+                IMPORTANT: If you cannot answer the user's query based *solely* on the provided profile information, respond with: "I am sorry, I can only provide information based on Pankaj's provided profile. If you are interested in connecting further or discussing something not covered here, I can help arrange a meeting with Pankaj."
+
+                User Query: ${userInput}`; // Use original userInput here for the prompt
+
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                
+                const apiKey = "AIzaSyCfk7wYwMcj06AjM-RQ2EBDgKxzAjNBNXM"; 
+                
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await retryFetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                        const generatedText = result.candidates[0].content.parts[0].text;
+                        snippetOutput.textContent = generatedText;
+                        copyButton.classList.remove('hidden');
+                        speakButton.classList.remove('hidden'); 
+                        
+                        speakText(generatedText); // Speak automatically
+                    } else {
+                        // Fallback for when AI cannot answer or response is malformed
+                        const fallbackResponse = "I am sorry, I can only provide information based on Pankaj's provided profile. If you are interested in connecting further or discussing something not covered here, I can help arrange a meeting with Pankaj.";
+                        snippetOutput.textContent = fallbackResponse;
+                        console.error("Gemini API response structure unexpected or empty, using fallback:", result);
+                        speakText(fallbackResponse);
+                    }
+                } catch (error) {
+                    const errorMessage = "An error occurred while processing your request. This might be due to a temporary service issue or an invalid API key. Please try again in a moment.";
+                    snippetOutput.textContent = errorMessage;
+                    console.error("Error calling Gemini API after retries:", error);
+                    showMessage('API request failed after multiple attempts. Please try again later.', 'error');
+                    speakText(errorMessage);
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                    buttonText.textContent = "Process Request";
+                    generateSnippetButton.disabled = false;
+                    clearButton.disabled = false;
+                }
+            });
+
+            copyButton.addEventListener('click', () => {
+                const textToCopy = snippetOutput.textContent;
+                if (textToCopy && textToCopy !== "Your tailored response will appear here." && textToCopy !== "Processing your request..." && textToCopy !== "Please paste a job description or ask a question." && textToCopy !== "Could not process request. The AI response was unexpected. Please try rephrasing or check the console for errors." && textToCopy !== "An error occurred while processing your request. Please check your network connection or ensure your API key is valid.") {
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = textToCopy;
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showMessage('Response copied to clipboard!');
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                        showMessage('Failed to copy response.', 'error');
+                    }
+                    document.body.removeChild(tempTextArea);
+                } else {
+                    showMessage('Nothing to copy!', 'error');
+                }
+            });
+
+            clearButton.addEventListener('click', () => {
+                jobDescriptionInput.value = '';
+                snippetOutput.textContent = "Your tailored response will appear here.";
+                copyButton.classList.add('hidden');
+                speakButton.classList.add('hidden');
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel(); // Stop any ongoing speech
+                }
+            });
+
+            // Speech functionality (now primarily for manual re-trigger if needed)
+            speakButton.addEventListener('click', () => {
+                const textToSpeak = snippetOutput.textContent;
+                if (textToSpeak && textToSpeak !== "Your tailored response will appear here." && textToSpeak !== "Processing your request..." && textToSpeak !== "Please paste a job description or ask a question." && textToSpeak !== "Could not process request. The AI response was unexpected. Please try rephrasing or check the console for errors." && textToSpeak !== "An error occurred while processing your request. Please check your network connection or ensure your API key is valid.") {
+                    speakText(textToSpeak); // Call the common speak function
+                    showMessage('Speaking response...');
+                } else {
+                    showMessage('Nothing to speak!', 'error');
+                }
+            });
+
+            // Hire Me Modal Logic
+            const hireMeModal = document.getElementById('hireMeModal');
+            const openHireMeModalButton = document.getElementById('openHireMeModal');
+            const closeHireMeModalButton = document.getElementById('closeHireMeModal');
+            const hireMeForm = document.getElementById('hireMeForm');
+            const formMessage = document.getElementById('formMessage');
+
+            openHireMeModalButton.addEventListener('click', () => {
+                hireMeModal.classList.remove('hidden');
+                formMessage.classList.add('hidden'); // Hide previous success message
+                hireMeForm.reset(); // Clear form fields
+            });
+
+            closeHireMeModalButton.addEventListener('click', () => {
+                hireMeModal.classList.add('hidden');
+            });
+
+            // Close modal if clicked outside content
+            hireMeModal.addEventListener('click', (e) => {
+                if (e.target === hireMeModal) {
+                    hireMeModal.classList.add('hidden');
+                }
+            });
+
+            // Handle Formspree submission
+            hireMeForm.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Prevent default form submission
+
+                const form = event.target;
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: form.method,
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        formMessage.classList.remove('hidden'); // Show success message
+                        form.reset(); // Clear form fields
+                        // Optionally close modal after a delay
+                        setTimeout(() => {
+                            hireMeModal.classList.add('hidden');
+                        }, 3000);
+                    } else {
+                        const data = await response.json();
+                        if (data.errors) {
+                            showMessage('Form submission failed: ' + data.errors.map(error => error.message).join(', '), 'error');
+                        } else {
+                            showMessage('Form submission failed. Please try again.', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    showMessage('An error occurred during submission. Please try again later.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
